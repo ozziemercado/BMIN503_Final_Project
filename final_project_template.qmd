@@ -1,5 +1,5 @@
 ---
-title: "Your Title"
+title: "Evaluating Family Engagement and Disparities in Health Information Access through Patient Portal Use within a NICU"
 subtitle: "BMIN503/EPID600 Final Project"
 author: "Osvaldo Mercado"
 format: html
