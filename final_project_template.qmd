@@ -12,21 +12,21 @@ embed-resources: true
 
 ## Overview {#sec-overview}
 
-This project aims to analyze how families in the neonatal intensive care unit (NICU) engage with their infant's MyCHOP accounts (an online electronic health record) to access various aspects of their child’s care. The project will examine patterns of portal use, including frequency, types of information accessed, and timing, with a focus on understanding how these interactions vary across demographics and socioeconomic factors.
+This project aims to analyze how families in the neonatal intensive care unit (NICU) engage with their infant's patient portal or MyCHOP accounts (an online electronic health record) to access various aspects of their child’s care. The project will examine patterns of patient portal use, including frequency, types of information accessed, and timing, with a focus on understanding how these interactions vary across demographics and socioeconomic factors.
 
 Two individuals I have spoken to this project about include:
 
-1\) Shikha Sinha MD - a clinical informaticist with an understanding of online portal usage at CHOP. Along with some individuals on her team I have learned about various aspects that are attainable in our current data warehouse.
+1\) Shikha Sinha MD - a clinical informaticist with an expertise in online portal usage at CHOP. Along with some individuals on her team I have learned about various aspects of data that are attainable in our current data warehouse that relate to patient portal use.
 
-2\) Jonas Miller - a data analyst at CHOP who has assisted me in understanding how to pull from the clinical data warehouse and the appropriate tables to use
+2\) Jonas Miller - a data analyst at CHOP who has assisted me in understanding how to pull from the clinical data warehouse and identify the appropriate tables to use for analysis.
 
 ## Introduction {#sec-introduction}
 
-Describe the problem addressed, its significance, and some background to motivate the problem. This should extend what is in the @sec-overview.
-
-Explain why your problem is interdisciplinary, what fields can contribute to its understanding, and incorporate background related to what you learned from meeting with faculty/staff.
+Families with infants in the NICU experience high levels of stress and complexity in navigating their child’s healthcare. Access to MyCHOP, an online portal for EHR access, provides a valuable resource for families to view updates on their child’s treatment, review provider notes, and stay informed about care decisions. However, disparities may exist in how effectively families from different backgrounds can use this tool to stay informed and engaged. Understanding how families access their MyCHOP accounts, what types of data they prioritize, and when they engage with the portal could reveal insights into potential barriers to access or disparities in engagement. These insights are especially crucial in the NICU setting, where clear communication and access to information are critical for family-centered care. This study will analyze usage patterns among families, considering factors such as race, ethnicity, median household income, and property values, to identify trends and inform interventions that could enhance equitable access to critical health information.
 
 ## Methods {#sec-methods}
+
+I am currently still in the process of safely and appropriately pulling the data. More to come soon!
 
 Describe the data used and general methodological approach used to address the problem described in the @sec-introduction. Subsequently, incorporate full R code necessary to retrieve and clean data, and perform analysis. Be sure to include a description of code so that others (including your future self) can understand what you are doing and why.
 
