@@ -1,0 +1,290 @@
+---
+title: "Evaluating Family Engagement and Disparities in Health Information Access through Patient Portal Use within a NICU"
+subtitle: "BMIN503 Final Project"
+author: "Osvaldo Mercado"
+date: "`r Sys.Date()`"
+format: 
+  html:
+    fig-width: 8
+    fig-height: 6
+    toc: true
+    toc-location: left
+    css: "https://github.research.chop.edu/pages/CQI/chop-bootstrap/bootstrap-3/bootstrap.min.css"
+editor: visual
+embed-resources: true
+editor_options: 
+  chunk_output_type: inline
+execute: 
+  warning: false
+  message: false
+---
+
+```{=html}
+<style>
+#TOC {
+  background-color: #f9f9f9; /* Light gray background */
+  border: 1px solid #ddd;   /* Add a subtle border */
+  padding: 10px;            /* Add padding inside the box */
+  border-radius: 5px;       /* Rounded corners */
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
+}
+</style>
+```
+
+# Overview
+
+This project aims to analyze how families in the neonatal intensive care unit (NICU) engage with their infant's patient portal or MyCHOP accounts (an online electronic health record) to access various aspects of their child’s care. The project will examine patterns of patient portal use, including frequency, types of information accessed, and timing, with a focus on understanding how these interactions vary across demographics and socioeconomic factors.
+
+# Introduction
+
+Families with infants in the NICU experience high levels of stress and complexity in navigating their child’s healthcare. Access to MyCHOP, an online portal for EHR access, provides a valuable resource for families to view updates on their child’s treatment, review provider notes, and stay informed about care decisions. However, disparities may exist in how effectively families from different backgrounds can use this tool to stay informed and engaged. Understanding how families access their MyCHOP accounts, what types of data they prioritize, and when they engage with the portal could reveal insights into potential barriers to access or disparities in engagement. These insights are especially crucial in the NICU setting, where clear communication and access to information are critical for family-centered care. This study will analyze usage patterns among families, considering factors such as race, ethnicity, median household income, and property values, to identify trends and inform interventions that could enhance equitable access to critical health information.
+
+# Methods
+
+The dataset for this project was sourced from the Children's Hospital of Philadelphia (CHOP) Clinical Data Warehouse. It was retrieved from tables stored within Clarity and the Trusted Data Layer. As this dataset is not publicly accessible, the data tables cannot be shared. This project serves as an exploratory analysis of the variables described earlier. The methods section begins with loading the required packages for this analysis.
+
+## Install packages
+
+```{r}
+#| eval: false
+
+install.packages("readr")
+install.packages("tidyverse")
+install.packages("ggplot2")
+install.packages("lubridate")
+install.packages("gtsummary")
+install.packages("RColorBrewer")
+install.packages("cowplot")
+install.packages("dplyr")
+
+```
+
+## Load packages
+
+```{r}
+library(readr) # Data import
+library(tidyverse) # Data manipulation, visualizaion and analysis
+library(ggplot2) # For creation of graphs
+library(lubridate) # For manipulating dates
+library(gtsummary) # Summary statistics
+library(RColorBrewer) # For personalization of color
+library(cowplot) # For combining multiple plots into one
+library(dplyr) # For data cleaning and filtering
+library(forcats)  # Allows re-coding of factors
+
+```
+
+## Upload data
+
+```{r}
+#Upload patient data
+patient_data <- read.csv(file.choose())
+
+```
+
+## Exploration and Manipulation of data
+
+```{r}
+# Count total unique IDs, gives unique patients
+total_unique <- length(unique(patient_data$MRN))
+
+# Count occurrences of repeated IDs, gives sum of repeat patient encounters
+repeated <- sum(table(patient_data$MRN) > 1)
+
+# Print results
+cat("Total unique IDs:", total_unique, "\nNumber of repeated IDs:", repeated, "\n")
+
+```
+
+```{r}
+# Sort the data by MRN and admission_date
+patient_data_ordered <- patient_data[order(patient_data$MRN, patient_data$HOSPITAL_ADMIT_DATE), ]
+
+# Keep only the first occurrence of each MRN
+initial_admissions <- patient_data_ordered[!duplicated(patient_data_ordered$MRN), ]
+
+# Count total records in the filtered table
+total_records_initial <- nrow(initial_admissions)
+
+# Display the total count
+cat("Total records in the intial admission table:", total_records_initial, "\n") #Equivalent count to unique ID's above
+```
+
+```{r}
+# Calculate total gestational age in TOTAL days: combination of two columns
+initial_admissions$GESTATIONAL_AGE_TOTAL_DAYS <- 
+  initial_admissions$GESTATIONAL_AGE_COMPLETE_WEEKS * 7 + #multiply by 7 days in week
+  initial_admissions$GESTATIONAL_AGE_REMAINDER_DAYS
+
+# Calculation of average GA in TOTAL days
+average_GA_days <- mean(na.omit(initial_admissions$GESTATIONAL_AGE_TOTAL_DAYS))
+
+# Convert the average back to weeks and days for interpretation
+average_weeks <- floor(average_GA_days / 7) #Using floor to round down weeks
+average_days <- round(average_GA_days %% 7, 1)  #Using %% to obtain remainder when dividing by 7
+
+# Combine the results
+cat("Average Gestational Age:", average_weeks, "weeks and", average_days, "days\n")
+```
+
+To analyze the stored data effectively, the data table needs to be properly converted and formatted. Below are steps to prepare the data so it can be summarized and manipulated correctly using factors.
+
+Sex Column Exploration and Conversion
+
+```{r}
+# Additional analysis and conversion of data stored: SEX
+unique(initial_admissions$SEX) # Stored as M, F, U
+initial_admissions <- initial_admissions |>  # Remove limited 3 U
+  dplyr::filter(SEX != "U")
+# Conversion to factor
+initial_admissions$SEX <- as.factor(initial_admissions$SEX)
+initial_admissions$SEX <- droplevels(initial_admissions$SEX)
+table(initial_admissions$SEX)
+```
+
+Race Column Exploration and Conversion
+
+```{r}
+# Additional analysis and conversion of data stored: RACE
+## Will combine/group certain variables for clarity and simplicity 
+unique(initial_admissions$RACE) 
+initial_admissions <- initial_admissions |>
+  dplyr::mutate(RACE = case_when(
+      RACE %in% c("Refused", "Unknown", "Asked but unknown", "", "Choose not to disclose") ~ "Unknown/Missing/Refused",
+      TRUE ~ RACE
+    )
+  )
+# Conversion to factor
+initial_admissions$RACE <- as.factor(initial_admissions$RACE)
+table(initial_admissions$RACE)
+```
+
+Ethnicity Column Exploration and Conversion
+
+```{r}
+# Additional analysis and conversion of data stored: ETHNICITY
+## Will combine/group certain variables for clarity and simplicity 
+unique(initial_admissions$ETHNICITY) 
+initial_admissions <- initial_admissions |> 
+  dplyr::mutate(ETHNICITY = case_when(
+      ETHNICITY %in% c("Refused", "Unknown", "Asked But Unknown", "", "Choose Not To Disclose", "Other") ~ "Unknown/Missing/Refused",
+      TRUE ~ ETHNICITY
+    )
+  )
+# Conversion to factor
+initial_admissions$ETHNICITY <- as.factor(initial_admissions$ETHNICITY)
+table(initial_admissions$ETHNICITY)
+```
+
+Preferred Language Column Exploration and Conversion
+
+```{r}
+# Additional analysis and conversion of data stored: PREFERRED LANGUAGE
+## Will combine/group certain variables for clarity and simplicity 
+unique(initial_admissions$PREFERRED_LANGUAGE) 
+# Group languages with fewer than 15 occurrences as "Other" and keep "Unknown" and NULL seperate
+initial_admissions <- initial_admissions |>
+  dplyr::mutate(PREFERRED_LANGUAGE = case_when(
+      is.na(PREFERRED_LANGUAGE) | PREFERRED_LANGUAGE == "" ~ "Unknown/Missing",  # Combine NULL/missing and "" into Unknown/Missing
+      PREFERRED_LANGUAGE == "UNKNOWN" ~ "Unknown/Missing",                       # Keep UNKNOWN in this group
+      PREFERRED_LANGUAGE %in% names(which(table(PREFERRED_LANGUAGE) < 15)) ~ "Other",  # Group languages with <15 occurrences
+      PREFERRED_LANGUAGE == "Other" ~ "Other",                          # Explicitly include "Other" in this group
+      TRUE ~ PREFERRED_LANGUAGE                                 
+    )
+  )
+
+# Conversion to factor
+initial_admissions$PREFERRED_LANGUAGE <- as.factor(initial_admissions$PREFERRED_LANGUAGE)
+table(initial_admissions$PREFERRED_LANGUAGE)
+
+```
+
+Payor Group Column Exploration and Conversion
+
+```{r}
+
+# Additional analysis and conversion of data stored: PAYOR GROUP
+unique(initial_admissions$PAYOR_GROUP) 
+#Recode Medical Assistance as Medicaid
+initial_admissions$PAYOR_GROUP <- 
+  fct_recode(initial_admissions$PAYOR_GROUP, "MEDICAID" = "MEDICAL ASSISTANCE")
+initial_admissions <- initial_admissions |>
+  dplyr::mutate(PAYOR_GROUP = if_else(is.na(PAYOR_GROUP) | PAYOR_GROUP == "", "Missing/Unknown", PAYOR_GROUP))
+
+# Conversion to factor
+initial_admissions$PAYOR_GROUP <- as.factor(initial_admissions$PAYOR_GROUP)
+table(initial_admissions$PAYOR_GROUP)
+
+```
+
+Additional data manipulation (include dates, MyCHOP activation, MyCHOP declined, inborn)
+
+```{r}
+#Converting various column dates from "character" to "date"
+initial_admissions <- initial_admissions |>
+  mutate(
+    DOB = as.Date(initial_admissions$DOB),
+    HOSPITAL_ADMIT_DATE = as.Date(HOSPITAL_ADMIT_DATE),
+    HOSPITAL_DISCHARGE_DATE = as.Date(HOSPITAL_DISCHARGE_DATE),
+    EPISODE_START_DATE = as.Date(EPISODE_START_DATE),
+    EPISODE_END_DATE = as.Date(EPISODE_END_DATE)
+  )
+
+#Exploration of MyCHOP Columns
+# Count rows where MYCHOP_ACTIVATION_IND is 1
+activation_count <- sum(initial_admissions$MYCHOP_ACTIVATION_IND == 1, na.rm = TRUE)
+
+# Count rows where MYCHOP_DECLINED_IND is 1
+declined_count <- sum(initial_admissions$MYCHOP_DECLINED_IND == 1, na.rm = TRUE)
+
+# Display the results
+cat("Number of activations (MYCHOP_ACTIVATION_IND = 1):", activation_count, 
+    "\nNumber of declines (MYCHOP_DECLINED_IND = 1):", declined_count, "\n")
+
+# Count the number of inborn patients (inborn_IND = 1)
+inborn_count <- sum(initial_admissions$INBORN_IND == 1, na.rm = TRUE)
+cat("Number of inborn patients:", inborn_count, "out of", total_unique, "\n")
+```
+
+# Results
+
+The initial part of this section contains descriptive statistics for patients admitted to the NICU from January 2018 to \*\*\*. Displayed below is a summary table for the overall patient data set.
+
+```{r}
+summary_table <- initial_admissions |>
+  tbl_summary(
+    include = c(SEX, RACE, ETHNICITY, PREFERRED_LANGUAGE, PAYOR_GROUP, 
+                MYCHOP_ACTIVATION_IND, MYCHOP_DECLINED_IND, 
+                GESTATIONAL_AGE_TOTAL_DAYS, NICU_LOS_DAYS, INBORN_IND),
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",  # Median (IQR) for continuous variables
+      all_categorical() ~ "{n} ({p}%)"              # Count and percentage for categorical variables
+    ),
+    label = list(
+      SEX ~ "Gender",
+      RACE ~ "Race",
+      ETHNICITY ~ "Ethnicity",
+      PREFERRED_LANGUAGE ~ "Preferred Language",
+      PAYOR_GROUP ~ "Insurance",
+      MYCHOP_ACTIVATION_IND ~ "MyCHOP Activated",
+      MYCHOP_DECLINED_IND ~ "MyCHOP Declined",
+      GESTATIONAL_AGE_TOTAL_DAYS ~ "Gestational Age (Days)",
+      NICU_LOS_DAYS ~ "NICU Length of Stay (Days)",
+      INBORN_IND ~ "Inborn"
+    )
+  )
+
+summary_table <- summary_table %>%
+  modify_header(label = "**Variable**") %>%
+  modify_header(stat_0 = "**N (%)**") %>%
+  modify_caption("**Summary Table**") %>%
+  bold_labels()
+
+summary_table
+```
+
+# Conclusion
+
+This the conclusion. The @sec-results can be invoked here.
+
+## References
