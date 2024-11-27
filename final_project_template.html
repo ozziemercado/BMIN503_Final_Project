@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Osvaldo Mercado">
-<meta name="dcterms.date" content="2024-11-24">
+<meta name="dcterms.date" content="2024-11-27">
 
 <title>Evaluating Family Engagement and Disparities in Health Information Access through Patient Portal Use within a NICU</title>
 <style>
@@ -3094,10 +3094,13 @@ vertical-align: -.125em;
   <li><a href="#install-packages" id="toc-install-packages" class="nav-link" data-scroll-target="#install-packages">Install packages</a></li>
   <li><a href="#load-packages" id="toc-load-packages" class="nav-link" data-scroll-target="#load-packages">Load packages</a></li>
   <li><a href="#upload-data" id="toc-upload-data" class="nav-link" data-scroll-target="#upload-data">Upload data</a></li>
+  <li><a href="#exploration-of-data" id="toc-exploration-of-data" class="nav-link" data-scroll-target="#exploration-of-data">Exploration of data</a></li>
   </ul></li>
   <li><a href="#sec-results" id="toc-sec-results" class="nav-link" data-scroll-target="#sec-results">Results</a></li>
-  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a>
+  <ul class="collapse">
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
   </ul>
 </nav>
 </div>
@@ -3125,7 +3128,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 24, 2024</p>
+      <p class="date">November 27, 2024</p>
     </div>
   </div>
   
@@ -3137,6 +3140,15 @@ vertical-align: -.125em;
 </header>
 
 
+<style>
+#TOC {
+background-color: #f9f9f9; 
+border: 1px solid #ddd; 
+padding: 10px; 
+border-radius: 5px; 
+box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); 
+}
+</style>
 <section id="overview" class="level1">
 <h1>Overview</h1>
 <p>This project aims to analyze how families in the neonatal intensive care unit (NICU) engage with their infant’s patient portal or MyCHOP accounts (an online electronic health record) to access various aspects of their child’s care. The project will examine patterns of patient portal use, including frequency, types of information accessed, and timing, with a focus on understanding how these interactions vary across demographics and socioeconomic factors.</p>
@@ -3164,18 +3176,276 @@ vertical-align: -.125em;
 <section id="load-packages" class="level2">
 <h2 class="anchored" data-anchor-id="load-packages">Load packages</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse) </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># For graphs</span></span>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr) <span class="co"># Data import</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse) <span class="co"># Data manipulation, visualizaion and analysis</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># For creation of graphs</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate) <span class="co"># For manipulating dates</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gtsummary) <span class="co">#Summary statistics</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(RColorBrewer) <span class="co"># For coloring the plots</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gtsummary) <span class="co"># Summary statistics</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(RColorBrewer) <span class="co"># For personalization of color</span></span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(cowplot) <span class="co"># For combining multiple plots into one</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr) <span class="co"># For data cleaning</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr) <span class="co"># For data cleaning and filtering</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forcats)  <span class="co"># Allows re-coding of factors</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="upload-data" class="level2">
 <h2 class="anchored" data-anchor-id="upload-data">Upload data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Upload patient data</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>patient_data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">file.choose</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="exploration-of-data" class="level2">
+<h2 class="anchored" data-anchor-id="exploration-of-data">Exploration of data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count total unique IDs, gives unique patients</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>total_unique <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">unique</span>(patient_data<span class="sc">$</span>MRN))</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Count occurrences of repeated IDs, gives sum of repeat patient encounters</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>repeated <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">table</span>(patient_data<span class="sc">$</span>MRN) <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Print results</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Total unique IDs:&quot;</span>, total_unique, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">Number of repeated IDs:&quot;</span>, repeated, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total unique IDs: 7976 
+Number of repeated IDs: 776 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort the data by MRN and admission_date</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>patient_data_ordered <span class="ot">&lt;-</span> patient_data[<span class="fu">order</span>(patient_data<span class="sc">$</span>MRN, patient_data<span class="sc">$</span>HOSPITAL_ADMIT_DATE), ]</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only the first occurrence of each MRN</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>initial_admissions <span class="ot">&lt;-</span> patient_data_ordered[<span class="sc">!</span><span class="fu">duplicated</span>(patient_data_ordered<span class="sc">$</span>MRN), ]</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Count total records in the filtered table</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>total_records_initial <span class="ot">&lt;-</span> <span class="fu">nrow</span>(initial_admissions)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the total count</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Total records in the intial admission table:&quot;</span>, total_records_initial, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>) <span class="co">#Equivalent count to unique ID&#39;s above</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total records in the intial admission table: 7976 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate total gestational age in TOTAL days: combination of two columns</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>initial_admissions<span class="sc">$</span>GESTATIONAL_AGE_TOTAL_DAYS <span class="ot">&lt;-</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  initial_admissions<span class="sc">$</span>GESTATIONAL_AGE_COMPLETE_WEEKS <span class="sc">*</span> <span class="dv">7</span> <span class="sc">+</span> <span class="co">#multiply by 7 days in week</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  initial_admissions<span class="sc">$</span>GESTATIONAL_AGE_REMAINDER_DAYS</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculation of average GA in TOTAL days</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>average_GA_days <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">na.omit</span>(initial_admissions<span class="sc">$</span>GESTATIONAL_AGE_TOTAL_DAYS))</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert the average back to weeks and days for interpretation</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>average_weeks <span class="ot">&lt;-</span> <span class="fu">floor</span>(average_GA_days <span class="sc">/</span> <span class="dv">7</span>) <span class="co">#Using floor to round down weeks</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>average_days <span class="ot">&lt;-</span> <span class="fu">round</span>(average_GA_days <span class="sc">%%</span> <span class="dv">7</span>, <span class="dv">1</span>)  <span class="co">#Using %% to obtain remainder when dividing by 7</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine the results</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Average Gestational Age:&quot;</span>, average_weeks, <span class="st">&quot;weeks and&quot;</span>, average_days, <span class="st">&quot;days</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Average Gestational Age: 35 weeks and 4.5 days</code></pre>
+</div>
+</div>
+<p>To analyze the stored data effectively, the data table needs to be properly converted and formatted. Below are steps to prepare the data so it can be summarized and manipulated correctly using factors.</p>
+<p>Sex Column Exploration and Conversion</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Additional analysis and conversion of data stored: SEX</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(initial_admissions<span class="sc">$</span>SEX) <span class="co"># Stored as M, F, U</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;M&quot; &quot;F&quot; &quot;U&quot;</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>initial_admissions <span class="ot">&lt;-</span> initial_admissions <span class="sc">|&gt;</span>  <span class="co"># Remove limited 3 U</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(SEX <span class="sc">!=</span> <span class="st">&quot;U&quot;</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Conversion to factor</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>initial_admissions<span class="sc">$</span>SEX <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(initial_admissions<span class="sc">$</span>SEX)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>initial_admissions<span class="sc">$</span>SEX <span class="ot">&lt;-</span> <span class="fu">droplevels</span>(initial_admissions<span class="sc">$</span>SEX)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(initial_admissions<span class="sc">$</span>SEX)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+   F    M 
+3494 4479 </code></pre>
+</div>
+</div>
+<p>Race Column Exploration and Conversion</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Additional analysis and conversion of data stored: RACE</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Will combine/group certain variables for clarity and simplicity </span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(initial_admissions<span class="sc">$</span>RACE) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] &quot;White&quot;                                    
+ [2] &quot;Other&quot;                                    
+ [3] &quot;Black or African American&quot;                
+ [4] &quot;Asian&quot;                                    
+ [5] &quot;Multi-Racial&quot;                             
+ [6] &quot;Indian&quot;                                   
+ [7] &quot;Refused&quot;                                  
+ [8] &quot;&quot;                                         
+ [9] &quot;Unknown&quot;                                  
+[10] &quot;American Indian or Alaska Native&quot;         
+[11] &quot;Native Hawaiian or Other Pacific Islander&quot;
+[12] &quot;Choose not to disclose&quot;                   
+[13] &quot;Asked but unknown&quot;                        </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>initial_admissions <span class="ot">&lt;-</span> initial_admissions <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">RACE =</span> <span class="fu">case_when</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>      RACE <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Refused&quot;</span>, <span class="st">&quot;Unknown&quot;</span>, <span class="st">&quot;Asked but unknown&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="st">&quot;Choose not to disclose&quot;</span>) <span class="sc">~</span> <span class="st">&quot;Unknown/Missing/Refused&quot;</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> RACE</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Conversion to factor</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>initial_admissions<span class="sc">$</span>RACE <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(initial_admissions<span class="sc">$</span>RACE)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(initial_admissions<span class="sc">$</span>RACE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+         American Indian or Alaska Native 
+                                       10 
+                                    Asian 
+                                      254 
+                Black or African American 
+                                     1611 
+                                   Indian 
+                                       69 
+                             Multi-Racial 
+                                      487 
+Native Hawaiian or Other Pacific Islander 
+                                        6 
+                                    Other 
+                                     1196 
+                  Unknown/Missing/Refused 
+                                      286 
+                                    White 
+                                     4054 </code></pre>
+</div>
+</div>
+<p>Ethnicity Column Exploration and Conversion</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Additional analysis and conversion of data stored: ETHNICITY</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Will combine/group certain variables for clarity and simplicity </span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(initial_admissions<span class="sc">$</span>ETHNICITY) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;Non-hispanic Or Non-latino&quot; &quot;Hispanic Or Latino&quot;        
+[3] &quot;Refused&quot;                    &quot;&quot;                          
+[5] &quot;Unknown&quot;                    &quot;Choose Not To Disclose&quot;    
+[7] &quot;Other&quot;                      &quot;Asked But Unknown&quot;         </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>initial_admissions <span class="ot">&lt;-</span> initial_admissions <span class="sc">|&gt;</span> </span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">ETHNICITY =</span> <span class="fu">case_when</span>(</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>      ETHNICITY <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Refused&quot;</span>, <span class="st">&quot;Unknown&quot;</span>, <span class="st">&quot;Asked But Unknown&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="st">&quot;Choose Not To Disclose&quot;</span>, <span class="st">&quot;Other&quot;</span>) <span class="sc">~</span> <span class="st">&quot;Unknown/Missing/Refused&quot;</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> ETHNICITY</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Conversion to factor</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>initial_admissions<span class="sc">$</span>ETHNICITY <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(initial_admissions<span class="sc">$</span>ETHNICITY)</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(initial_admissions<span class="sc">$</span>ETHNICITY)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+        Hispanic Or Latino Non-hispanic Or Non-latino 
+                      1240                       6356 
+   Unknown/Missing/Refused 
+                       377 </code></pre>
+</div>
+</div>
+<p>Preferred Language Column Exploration and Conversion</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Additional analysis and conversion of data stored: PREFERRED LANGUAGE</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Will combine/group certain variables for clarity and simplicity </span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(initial_admissions<span class="sc">$</span>PREFERRED_LANGUAGE) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] &quot;ENGLISH&quot;              &quot;SPANISH&quot;              &quot;CANTONESE&quot;           
+ [4] &quot;MANDARIN&quot;             &quot;FRENCH (CONTINENTAL)&quot; &quot;&quot;                    
+ [7] &quot;ARABIC&quot;               &quot;BURMESE&quot;              &quot;UNKNOWN&quot;             
+[10] &quot;HAITIAN CREOLE&quot;       &quot;VIETNAMESE&quot;           &quot;HEBREW&quot;              
+[13] &quot;BENGALI&quot;              &quot;PORTUGUESE&quot;           &quot;TURKISH&quot;             
+[16] &quot;SIGN LANGUAGE&quot;        &quot;URDU&quot;                 &quot;RUSSIAN&quot;             
+[19] &quot;AMHARIC&quot;              &quot;UKRAINIAN&quot;            &quot;OTHER&quot;               
+[22] &quot;TAMIL&quot;                &quot;ITALIAN&quot;              &quot;GREEK&quot;               
+[25] &quot;GUJARATI&quot;             &quot;MALAYALAM&quot;            &quot;HINDI&quot;               
+[28] &quot;PERSIAN&quot;              &quot;MACEDONIAN&quot;           &quot;PASHTO&quot;              
+[31] &quot;INDONESIAN&quot;           &quot;NEPALI&quot;               &quot;TAGALOG&quot;             
+[34] &quot;PUNJABI&quot;              &quot;CAMBODIAN&quot;            &quot;MANDINGO&quot;            </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Group languages with fewer than 15 occurrences as &quot;Other&quot; and keep &quot;Unknown&quot; and NULL seperate</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>initial_admissions <span class="ot">&lt;-</span> initial_admissions <span class="sc">|&gt;</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(    <span class="at">PREFERRED_LANGUAGE =</span> <span class="fu">case_when</span>(</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">is.na</span>(PREFERRED_LANGUAGE) <span class="sc">|</span> PREFERRED_LANGUAGE <span class="sc">==</span> <span class="st">&quot;&quot;</span> <span class="sc">~</span> <span class="st">&quot;Unknown/Missing&quot;</span>,  <span class="co"># Combine NULL/missing and &quot;&quot; into Unknown/Missing</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>      PREFERRED_LANGUAGE <span class="sc">==</span> <span class="st">&quot;UNKNOWN&quot;</span> <span class="sc">~</span> <span class="st">&quot;Unknown/Missing&quot;</span>,                       <span class="co"># Keep UNKNOWN in this group</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>      PREFERRED_LANGUAGE <span class="sc">%in%</span> <span class="fu">names</span>(<span class="fu">which</span>(<span class="fu">table</span>(PREFERRED_LANGUAGE) <span class="sc">&lt;</span> <span class="dv">15</span>)) <span class="sc">~</span> <span class="st">&quot;Other&quot;</span>,  <span class="co"># Group languages with &lt;15 occurrences</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>      PREFERRED_LANGUAGE <span class="sc">==</span> <span class="st">&quot;Other&quot;</span> <span class="sc">~</span> <span class="st">&quot;Other&quot;</span>,                          <span class="co"># Explicitly include &quot;Other&quot; in this group</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> PREFERRED_LANGUAGE                                 </span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Conversion to factor</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>initial_admissions<span class="sc">$</span>PREFERRED_LANGUAGE <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(initial_admissions<span class="sc">$</span>PREFERRED_LANGUAGE)</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(initial_admissions<span class="sc">$</span>PREFERRED_LANGUAGE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+         ARABIC         ENGLISH  HAITIAN CREOLE           Other         SPANISH 
+             32            7262              21             127             340 
+Unknown/Missing 
+            191 </code></pre>
+</div>
+</div>
+<p>Payor Group Column Exploration and Conversion</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Additional analysis and conversion of data stored: PAYOR GROUP</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(initial_admissions<span class="sc">$</span>PAYOR_GROUP) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;MEDICAL ASSISTANCE&quot; &quot;COMMERCIAL&quot;         &quot;&quot;                  
+[4] &quot;OTHER&quot;              &quot;CHARITY CARE&quot;      </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Recode Medical Assistance as Medicaid</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>initial_admissions<span class="sc">$</span>PAYOR_GROUP <span class="ot">&lt;-</span> </span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fct_recode</span>(initial_admissions<span class="sc">$</span>PAYOR_GROUP, <span class="st">&quot;MEDICAID&quot;</span> <span class="ot">=</span> <span class="st">&quot;MEDICAL ASSISTANCE&quot;</span>)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>initial_admissions <span class="ot">&lt;-</span> initial_admissions <span class="sc">|&gt;</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">PAYOR_GROUP =</span> <span class="fu">if_else</span>(<span class="fu">is.na</span>(PAYOR_GROUP) <span class="sc">|</span> PAYOR_GROUP <span class="sc">==</span> <span class="st">&quot;&quot;</span>, <span class="st">&quot;Missing/Unknown&quot;</span>, PAYOR_GROUP))</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Conversion to factor</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>initial_admissions<span class="sc">$</span>PAYOR_GROUP <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(initial_admissions<span class="sc">$</span>PAYOR_GROUP)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(initial_admissions<span class="sc">$</span>PAYOR_GROUP)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+   CHARITY CARE      COMMERCIAL        MEDICAID Missing/Unknown           OTHER 
+              5            3068            3316            1456             128 </code></pre>
+</div>
+</div>
+<p>Additional data manipulation (include dates, MyCHOP activation, MyCHOP declined, inborn)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(initial_admissions<span class="sc">$</span>DOB)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="do">#####</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>first_admissions <span class="sc">|&gt;</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>( <span class="co"># Add a column for average gestational age (calculated above)</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_gestational_age =</span> <span class="fu">paste0</span>(</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">floor</span>(<span class="fu">mean</span>(<span class="fu">na.omit</span>(GESTATIONAL_AGE_TOTAL_DAYS)) <span class="sc">/</span> <span class="dv">7</span>), <span class="st">&quot; weeks, &quot;</span>,</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mean</span>(<span class="fu">na.omit</span>(GESTATIONAL_AGE_TOTAL_DAYS)) <span class="sc">%%</span> <span class="dv">7</span>, <span class="st">&quot; days&quot;</span>)</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>( <span class="co"># Select and summarize relevant columns</span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>    avg_gestational_age, SEX, BIRTH_WEIGHT_GRAMS, NICU_LOS_DAYS, RACE, ETHNICITY</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Generate a summary table</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tbl_summary</span>(</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> SEX,  <span class="co"># Divide the population by sex</span></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">statistic =</span> <span class="fu">list</span>(</span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">all_continuous</span>() <span class="sc">~</span> <span class="st">&quot;{mean} ({sd})&quot;</span>,</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">all_categorical</span>() <span class="sc">~</span> <span class="st">&quot;{n} / {N} ({p}%)&quot;</span>,</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">digits =</span> <span class="fu">all_continuous</span>() <span class="sc">~</span> <span class="dv">2</span>,</span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">missing_text =</span> <span class="st">&quot;(Missing)&quot;</span></span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add an overall column</span></span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_overall</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Customize headers and captions</span></span>
+<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">modify_header</span>(label <span class="sc">~</span> <span class="st">&quot;**Variable**&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">modify_caption</span>(<span class="st">&quot;**Patient Characteristics in First Admissions**&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">modify_footnote</span>(</span>
+<span id="cb31-30"><a href="#cb31-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">update =</span> <span class="fu">all_stat_cols</span>() <span class="sc">~</span> <span class="st">&quot;Summary of first NICU admissions by sex, race, and other characteristics.&quot;</span></span>
+<span id="cb31-31"><a href="#cb31-31" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb31-32"><a href="#cb31-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bold_labels</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 </section>
 <section id="sec-results" class="level1">
@@ -3185,9 +3455,9 @@ vertical-align: -.125em;
 <section id="conclusion" class="level1">
 <h1>Conclusion</h1>
 <p>This the conclusion. The <a href="#sec-results" class="quarto-xref">Section 4</a> can be invoked here.</p>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
 </section>
-<section id="references" class="level1">
-<h1>References</h1>
 </section>
 
 </main>
