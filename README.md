@@ -1,19 +1,11 @@
-# BMIN503/EPID600 Final Project
+# Evaluating Family Engagement and Disparities in Health Information Access through Patient Portal Use within a NICU
 
-This repository contains templates for the final written report and GitHub repository. Follow the instructions below to clone this repository, and then turn in your final project's code via a pull request to this repository.
+### By: Osvaldo Mercado
 
-1. To start, **fork** this BMIN503_Final_Project repository.
-1. **Clone** the forked repository to your computer.
-1. Modify the files provided, add your own, and **commit** changes to complete your final project.
-1. **Push**/sync the changes up to your GitHub account.
-1. Create a **pull request** on this, the original BMIN503_Final_Project, repository to turn in your final project.
+## Overview
 
+This project aims to analyze how families in the neonatal intensive care unit (NICU) engage with their infant's patient portal or MyCHOP accounts (an online electronic health record) to access various aspects of their child’s care. The project will examine patterns of patient portal use, including frequency, types of information accessed, and timing, with a focus on understanding how these interactions vary across demographics and socioeconomic factors.
 
-Follow the instructions [here][forking] if you are unsure what the above steps mean.
+### Latest updates
 
-DUE DATE FOR FINAL VERSION: 12/13/24 11:59PM. This is a hard deadline. Turn in whatever you have by this date.
-
-
-<!-- Links -->
-[forking]: https://guides.github.com/activities/forking/
-
+As of 11/27, I am completing the preliminary access to data. I have incorporated patient data, but am in the process of cleaning and analyzing the more specific MyChart messaging info.
