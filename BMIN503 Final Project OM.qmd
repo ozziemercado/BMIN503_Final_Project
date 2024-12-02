@@ -295,12 +295,40 @@ Utilization of a lookup table to understand the numeric values of MYC_UA_TYPE_C.
 head(epic_lookup_table, n = 30)
 ```
 
-# Results
-
-The initial part of this section contains descriptive statistics for patients admitted to the NICU from January 2018 to September 2024. Displayed below is a summary table for the overall patient data set.
+Addition of a column to account for whether or not a patient accessed their MyChart account DURING their hospital stay
 
 ```{r}
-summary_table <- initial_admissions |>
+# Identify patient who accessed their MyChart DURING their initial NICU admission
+mychart_access <- filtered_message_data |>
+  inner_join(initial_admissions, by = "MRN") |>
+  filter(UA_TIME >= EPISODE_START_DATE & UA_TIME <= EPISODE_END_DATE) |>
+  select(MRN) |>
+  distinct()
+
+# Add MyChart_Access column to initial_admissions
+initial_admissions <- initial_admissions |>
+  mutate(
+    MyChart_Access = ifelse(MRN %in% mychart_access$MRN, 1, 0)
+  )
+patients_accessed_mychart <- sum(initial_admissions$MyChart_Access == 1, na.rm = TRUE)
+
+# Display results
+cat("Total number of patients who accessed MyChart:", patients_accessed_mychart, "\nNumber of patients admitted:", total_records_initial, "\n")
+```
+
+# Results
+
+## NICU Patient Characteristics
+
+The initial part of this section contains descriptive statistics for patients admitted to the NICU from January 2018 to September 2024. Displayed below is a summary table for the overall patient data set split by access to MyChart.
+
+```{r}
+# Split initial_admissions into two groups
+accessed_mychart <- initial_admissions %>% filter(MyChart_Access == 1)
+not_accessed_mychart <- initial_admissions %>% filter(MyChart_Access == 0)
+
+# Create summary tables for each group
+summary_accessed <- accessed_mychart |>
   tbl_summary(
     include = c(SEX, RACE, ETHNICITY, PREFERRED_LANGUAGE, PAYOR_GROUP,
                 GESTATIONAL_AGE_TOTAL_DAYS, NICU_LOS_DAYS, INBORN_IND),
@@ -319,15 +347,45 @@ summary_table <- initial_admissions |>
       INBORN_IND ~ "Inborn"
     ),
     missing = "no"  #Exclude missing values
-  )
-
-summary_table <- summary_table %>%
+  ) %>%
   modify_header(label = "**Variable**") %>%
   modify_header(stat_0 = "**N (%)**") %>%
-  modify_caption("**Summary Table of NICU Patient Characteristics**") %>%
-  bold_labels()
+  bold_labels() %>%
+  modify_caption("**Summary Table: Accessed MyChart**")
 
-summary_table
+summary_not_accessed <- not_accessed_mychart |>
+  tbl_summary(
+    include = c(SEX, RACE, ETHNICITY, PREFERRED_LANGUAGE, PAYOR_GROUP,
+                GESTATIONAL_AGE_TOTAL_DAYS, NICU_LOS_DAYS, INBORN_IND),
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",  # Median (IQR) for continuous variables
+      all_categorical() ~ "{n} ({p}%)"              # Count and percentage for categorical variables
+    ),
+    label = list(
+      SEX ~ "Gender",
+      RACE ~ "Race",
+      ETHNICITY ~ "Ethnicity",
+      PREFERRED_LANGUAGE ~ "Preferred Language",
+      PAYOR_GROUP ~ "Insurance",
+      GESTATIONAL_AGE_TOTAL_DAYS ~ "Gestational Age (Days)",
+      NICU_LOS_DAYS ~ "NICU Length of Stay (Days)",
+      INBORN_IND ~ "Inborn"
+    ),
+    missing = "no"  #Exclude missing values
+  ) %>%
+  modify_header(label = "**Variable**") %>%
+  modify_header(stat_0 = "**N (%)**") %>%
+  bold_labels() %>%
+  modify_caption("**Summary Table: Did Not Access MyChart**")
+
+# Combine the two summary tables side-by-side
+final_summary <- tbl_merge(
+  tbls = list(summary_accessed, summary_not_accessed),
+  tab_spanner = c("**Accessed MyChart**", "**Did Not Access MyChart**")
+)
+
+# Print the final summary table
+final_summary
 ```
 
 ```{r}
@@ -393,16 +451,58 @@ payor_plot <- ggplot(initial_admissions, aes(x = fct_infreq(PAYOR_GROUP))) +
 payor_plot
 ```
 
-```{r, eval=FALSE}
-###playing around with tables
-# Displaying the plots
-combined_plot <- plot_grid(
-  sex_plot, race_plot, ethnicity_plot, payor_plot,
-  labels = c("A", "B", "C", "D"),  # Add labels to each plot
-  ncol = 1,
-  align = "v")
+```{r}
+# Graph showing overall admissions to the NICU (includes re-admitted patients to NICU)
+patient_data$EPISODE_START_DATE <- as.Date(patient_data$EPISODE_START_DATE)
+# Aggregate data by month
+monthly_data_all <- patient_data |>
+  mutate(month = as.Date(cut(EPISODE_START_DATE, breaks = "month"))) |>
+  group_by(month) |>
+  summarise(frequency = n())
 
-combined_plot
+# Creating a timeline
+ggplot(monthly_data_all, aes(x = month, y = frequency)) +
+  geom_col(fill = "skyblue", color = "black") + 
+  labs(
+    title = "Monthly Frequency of Patient Admissions",
+    x = "Month",
+    y = "Number of Admissions"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),  # Center title
+    axis.title = element_text(size = 14),  # Axis titles
+    axis.text = element_text(size = 12)  # Axis labels
+  )
+```
+
+## MyChart Access Data Display
+
+```{r}
+# Aggregate monthly totals directly from initial_admissions
+monthly_data_initial <- initial_admissions |>
+  mutate(month = as.Date(cut(EPISODE_START_DATE, breaks = "month"))) |>
+  group_by(month) |>
+  summarise(
+    total_admissions = n(),  # Total admissions
+    mychart_access = sum(MyChart_Access == 1, na.rm = TRUE)  # Patients who accessed MyChart
+  )
+
+# Create the combined plot
+ggplot(monthly_data_initial, aes(x = month)) +
+  geom_col(aes(y = total_admissions), fill = "skyblue", color = "black") +  # Bar chart for total admissions
+  geom_line(aes(y = mychart_access), color = "red", size = 1.2) +  # Line chart for MyChart access
+  labs(
+    title = "Monthly NICU Admissions with MyChart Access",
+    x = "Month",
+    y = "Number of Patients",
+    caption = "Bar chart: Total admissions; Red line: MyChart access"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.position = "none"
+  )
 ```
 
 # Conclusion
