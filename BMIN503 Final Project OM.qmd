@@ -12,8 +12,6 @@ format:
     css: "https://github.research.chop.edu/pages/CQI/chop-bootstrap/bootstrap-3/bootstrap.min.css"
 editor: visual
 embed-resources: true
-editor_options: 
-  chunk_output_type: inline
 execute: 
   warning: false
   message: false
@@ -29,6 +27,10 @@ execute:
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
 }
 </style>
+```
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "C:/Users/mercadoo/OneDrive - Children's Hospital of Philadelphia/Informatics/Penn Informatics Courses/BMIN 503")
 ```
 
 # Overview
@@ -71,15 +73,15 @@ library(RColorBrewer) # For personalization of color
 library(cowplot) # For combining multiple plots into one
 library(dplyr) # For data cleaning and filtering
 library(forcats)  # Allows re-coding of factors
-
 ```
 
 ## Upload data
 
 ```{r}
-#Upload patient data
+#Upload necessary tables
 patient_data <- read.csv(file.choose())
 message_data <- read.csv(file.choose())
+epic_lookup_table <- read.csv(file.choose())
 
 ```
 
@@ -160,6 +162,7 @@ initial_admissions <- initial_admissions |>
   )
 # Conversion to factor
 initial_admissions$RACE <- as.factor(initial_admissions$RACE)
+initial_admissions$RACE <- fct_infreq(initial_admissions$RACE)
 table(initial_admissions$RACE)
 ```
 
@@ -177,6 +180,7 @@ initial_admissions <- initial_admissions |>
   )
 # Conversion to factor
 initial_admissions$ETHNICITY <- as.factor(initial_admissions$ETHNICITY)
+initial_admissions$ETHNICITY <- fct_infreq(initial_admissions$ETHNICITY)
 table(initial_admissions$ETHNICITY)
 ```
 
@@ -199,6 +203,7 @@ initial_admissions <- initial_admissions |>
 
 # Conversion to factor
 initial_admissions$PREFERRED_LANGUAGE <- as.factor(initial_admissions$PREFERRED_LANGUAGE)
+initial_admissions$PREFERRED_LANGUAGE <- fct_infreq(initial_admissions$PREFERRED_LANGUAGE)
 table(initial_admissions$PREFERRED_LANGUAGE)
 
 ```
@@ -217,6 +222,7 @@ initial_admissions <- initial_admissions |>
 
 # Conversion to factor
 initial_admissions$PAYOR_GROUP <- as.factor(initial_admissions$PAYOR_GROUP)
+initial_admissions$PAYOR_GROUP <- fct_infreq(initial_admissions$PAYOR_GROUP)
 table(initial_admissions$PAYOR_GROUP)
 
 ```
@@ -282,23 +288,21 @@ filtered_message_data <- message_data |>
   
 ```
 
-Creation of a lookup table to understand the numeric values of MYC_UA_TYPE_C. This column uses a numeric value which I can then associate with the lookup table I created from the Epic User Web to understand the action being completed.
+Utilization of a lookup table to understand the numeric values of MYC_UA_TYPE_C. This column uses a numeric value which I then associated with the lookup table I created from the Epic User Web to understand the action being completed.
 
 ```{r}
-# Upload data table including Epic released information about MyChart actions
-epic_lookup_table <- read.csv(file.choose())
-epic_lookup_table <- as_tibble(epic_lookup_table)
+#Visualizing the top 30 actions of a total 466 variables
+head(epic_lookup_table, n = 30)
 ```
 
 # Results
 
-The initial part of this section contains descriptive statistics for patients admitted to the NICU from January 2018 to \*\*\*. Displayed below is a summary table for the overall patient data set.
+The initial part of this section contains descriptive statistics for patients admitted to the NICU from January 2018 to September 2024. Displayed below is a summary table for the overall patient data set.
 
 ```{r}
 summary_table <- initial_admissions |>
   tbl_summary(
-    include = c(SEX, RACE, ETHNICITY, PREFERRED_LANGUAGE, PAYOR_GROUP, 
-                MYCHOP_ACTIVATION_IND, MYCHOP_DECLINED_IND, 
+    include = c(SEX, RACE, ETHNICITY, PREFERRED_LANGUAGE, PAYOR_GROUP,
                 GESTATIONAL_AGE_TOTAL_DAYS, NICU_LOS_DAYS, INBORN_IND),
     statistic = list(
       all_continuous() ~ "{median} ({p25}, {p75})",  # Median (IQR) for continuous variables
@@ -310,21 +314,95 @@ summary_table <- initial_admissions |>
       ETHNICITY ~ "Ethnicity",
       PREFERRED_LANGUAGE ~ "Preferred Language",
       PAYOR_GROUP ~ "Insurance",
-      MYCHOP_ACTIVATION_IND ~ "MyCHOP Activated",
-      MYCHOP_DECLINED_IND ~ "MyCHOP Declined",
       GESTATIONAL_AGE_TOTAL_DAYS ~ "Gestational Age (Days)",
       NICU_LOS_DAYS ~ "NICU Length of Stay (Days)",
       INBORN_IND ~ "Inborn"
-    )
+    ),
+    missing = "no"  #Exclude missing values
   )
 
 summary_table <- summary_table %>%
   modify_header(label = "**Variable**") %>%
   modify_header(stat_0 = "**N (%)**") %>%
-  modify_caption("**Summary Table**") %>%
+  modify_caption("**Summary Table of NICU Patient Characteristics**") %>%
   bold_labels()
 
 summary_table
+```
+
+```{r}
+#Distrubution of Patients by Sex
+sex_plot <- ggplot(initial_admissions, aes(x = SEX)) +
+  geom_bar(fill = "steelblue") +
+  labs(
+    title = "Sex",
+    x = "Sex",
+    y = "Count"
+  )
+sex_plot
+
+# Distribution of Patients by Race
+race_plot <- ggplot(initial_admissions, aes(x = fct_infreq(RACE))) +
+  geom_bar(fill = "#008080") +
+  geom_text(
+    stat = "count",               # Use counts as the statistic
+    aes(label = ..count..),       # Display the count on top of bars
+    vjust = -0.5,                 # Position the text slightly above the bars
+    size = 3                      # Adjust text size
+  ) +
+  labs(
+    title = "Race",
+    x = "Race",
+    y = "Count"
+  ) +              
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels
+  )
+race_plot
+
+# Distribution of Patients by Ethnicity
+ethnicity_plot <- ggplot(initial_admissions, aes(x = fct_infreq(ETHNICITY))) +
+  geom_bar(fill = "#DAA520") +
+  geom_text(
+    stat = "count",               
+    aes(label = ..count..),       
+    vjust = -0.5,                 
+    size = 3                      
+  ) +
+  labs(
+    title = "Ethnicity",
+    x = "Ethnicity",
+    y = "Count"
+  )
+ethnicity_plot
+
+# Distribution of Patients by Payor Group
+payor_plot <- ggplot(initial_admissions, aes(x = fct_infreq(PAYOR_GROUP))) +
+  geom_bar(fill = "#FF7F50") +
+  geom_text(
+    stat = "count",               
+    aes(label = ..count..),       
+    vjust = -0.5,                 
+    size = 3                      
+  ) +  
+  labs(
+    title = "Payor Group",
+    x = "Payor Group",
+    y = "Count"
+  )
+payor_plot
+```
+
+```{r, eval=FALSE}
+###playing around with tables
+# Displaying the plots
+combined_plot <- plot_grid(
+  sex_plot, race_plot, ethnicity_plot, payor_plot,
+  labels = c("A", "B", "C", "D"),  # Add labels to each plot
+  ncol = 1,
+  align = "v")
+
+combined_plot
 ```
 
 # Conclusion
