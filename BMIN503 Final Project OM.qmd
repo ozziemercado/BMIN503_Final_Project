@@ -79,10 +79,11 @@ library(forcats)  # Allows re-coding of factors
 ```{r}
 #Upload patient data
 patient_data <- read.csv(file.choose())
+message_data <- read.csv(file.choose())
 
 ```
 
-## Exploration and Manipulation of data
+## Exploration and Manipulation of patient data table
 
 ```{r}
 # Count total unique IDs, gives unique patients
@@ -102,6 +103,9 @@ patient_data_ordered <- patient_data[order(patient_data$MRN, patient_data$HOSPIT
 
 # Keep only the first occurrence of each MRN
 initial_admissions <- patient_data_ordered[!duplicated(patient_data_ordered$MRN), ]
+
+#Keep only data for admissions prior to September 30, 2024 (available messaging data)
+initial_admissions <- initial_admissions[initial_admissions$HOSPITAL_ADMIT_DATE < as.Date("2024-09-30"), ] 
 
 # Count total records in the filtered table
 total_records_initial <- nrow(initial_admissions)
@@ -244,6 +248,46 @@ cat("Number of activations (MYCHOP_ACTIVATION_IND = 1):", activation_count,
 # Count the number of inborn patients (inborn_IND = 1)
 inborn_count <- sum(initial_admissions$INBORN_IND == 1, na.rm = TRUE)
 cat("Number of inborn patients:", inborn_count, "out of", total_unique, "\n")
+```
+
+## Exploration and Manipulation of Messaging Table
+
+```{r}
+#When I initially queried the messaging information table for my included patients, it contained 37 million rows of information. After some data cleaning and in the interest of simpliying my data utilization in RStudio, I filtered specifically for pta.ua_time BETWEEN fne.episode_start_date AND fne.episode_end_date to make sure that the results only occured while a patient was admitted during my time window.
+
+# Count total unique rows, gives total number of messages provided in filtered data set
+total_unique_messages <- nrow(message_data)
+
+# Count total unique patients, gives total number of patients who had their MyChart accessed during NICU admission
+total_unique_messages_pat <- length(unique(message_data$MRN))
+
+# Display results
+cat("Total unique messages:", total_unique_messages, "\nNumber of unique patients:", total_unique_messages_pat, "\n")
+
+```
+
+Filtering table to only include patient access to MyChart (remove ShareEveryhere and External_Client)
+
+```{r}
+# Mutating dates
+message_data <- message_data |>
+  mutate(UA_TIME = as.Date(message_data$UA_TIME))
+
+# Table to show counts of different individuals accessing MyChart
+table(message_data$UA_PERSON_TYPE_C)
+
+#Filtering for only patient and user (proxy)
+filtered_message_data <- message_data |>
+  dplyr::filter(message_data$UA_PERSON_TYPE_C %in% c(1, 2))
+  
+```
+
+Creation of a lookup table to understand the numeric values of MYC_UA_TYPE_C. This column uses a numeric value which I can then associate with the lookup table I created from the Epic User Web to understand the action being completed.
+
+```{r}
+# Upload data table including Epic released information about MyChart actions
+epic_lookup_table <- read.csv(file.choose())
+epic_lookup_table <- as_tibble(epic_lookup_table)
 ```
 
 # Results
