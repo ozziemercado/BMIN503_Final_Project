@@ -39,11 +39,15 @@ This project aims to analyze how families in the neonatal intensive care unit (N
 
 # Introduction
 
-Families with infants in the NICU experience high levels of stress and complexity in navigating their child’s healthcare. Access to MyCHOP, an online portal for EHR access, provides a valuable resource for families to view updates on their child’s treatment, review provider notes, and stay informed about care decisions. However, disparities may exist in how effectively families from different backgrounds can use this tool to stay informed and engaged. Understanding how families access their MyCHOP accounts, what types of data they prioritize, and when they engage with the portal could reveal insights into potential barriers to access or disparities in engagement. These insights are especially crucial in the NICU setting, where clear communication and access to information are critical for family-centered care. This study will analyze usage patterns among families, considering factors such as race, ethnicity, median household income, and property values, to identify trends and inform interventions that could enhance equitable access to critical health information.
+Families with infants in the NICU experience high levels of stress and complexity in navigating their child’s healthcare. Access to MyCHOP, an online portal for EHR access, provides a valuable resource for families to view updates on their child’s treatment, review provider notes, and stay informed about care decisions (1). However, disparities may exist in how effectively families from different backgrounds can use this tool to stay informed and engaged. Understanding how families access their MyCHOP accounts, what types of data they prioritize, and when they engage with the portal could reveal insights into potential barriers to access or disparities in engagement. These insights are especially crucial in the NICU setting, where clear communication and access to information are critical for family-centered care. Previous studies have shown disparities in patient portal access within the outpatient setting, specifically lower activation rates for non-white and non-English preferred families (2). This study will analyze usage patterns among families, considering factors such as race, ethnicity, patient characteristics (such as length of stay, gestational age, weight), to identify trends and inform interventions that could enhance equitable access to health information within a NICU.
+
+The U.S. government first mandated patient access to medical information with the Health Insurance Portability and Accountability Act (HIPAA) in 1996, which gave patients the right to access their records.(3) A major update came with the 21st Century Cures Act, signed into law in 2016, which enhanced data interoperability and expanded electronic access to health records.(4) The most recent revision, effective April 5, 2021, under the Cures Act, mandates that eight categories of clinical notes in electronic health records (EHRs) be immediately available to patients via a secure online portal, prohibiting healthcare providers from blocking or delaying access to this information.(5)
+
+Children's Hospital of Philadelphia (CHOP) has provided access to MyCHOP for many years. During the pandemic, there was a significant effort to enhance the delivery of online information to families. As a result, MyCHOP utilization and access saw a substantial increase post-pandemic. This project delves deeper into the characteristics and trends of MyCHOP usage for CHOP NICU patients.
 
 # Methods
 
-The dataset for this project was sourced from the Children's Hospital of Philadelphia (CHOP) Clinical Data Warehouse. It was retrieved from tables stored within Clarity and the Trusted Data Layer. As this dataset is not publicly accessible, the data tables cannot be shared. This project serves as an exploratory analysis of the variables described earlier. The methods section begins with loading the required packages for this analysis.
+The dataset for this project was sourced from the Children's Hospital of Philadelphia (CHOP) Clinical Data Warehouse and Chronicles database. It was retrieved from tables stored within both Clarity and the Trusted Data Layer. As this dataset is not publicly accessible, the data tables cannot be shared. This project serves as an exploratory analysis of the variables described earlier. The methods section begins with loading the required packages for this analysis.
 
 ## Install packages
 
@@ -55,24 +59,35 @@ install.packages("tidyverse")
 install.packages("ggplot2")
 install.packages("lubridate")
 install.packages("gtsummary")
-install.packages("RColorBrewer")
-install.packages("cowplot")
 install.packages("dplyr")
-
+install.packages("forcats")
+install.packages("tinymodels")
+install.packages("ggwordcloud")
+install.packages("vip")
+install.packages("dotwhisker")
+install.packages("randomforest")
+install.packages("glmnet")
+install.packages("xgboost")
 ```
 
 ## Load packages
 
 ```{r}
-library(readr) # Data import
-library(tidyverse) # Data manipulation, visualizaion and analysis
-library(ggplot2) # For creation of graphs
-library(lubridate) # For manipulating dates
-library(gtsummary) # Summary statistics
-library(RColorBrewer) # For personalization of color
-library(cowplot) # For combining multiple plots into one
-library(dplyr) # For data cleaning and filtering
-library(forcats)  # Allows re-coding of factors
+library(readr)        # Importing data
+library(tidyverse)    # Data manipulation and analysis
+library(ggplot2)      # Creating visualizations
+library(lubridate)    # Working with dates
+library(gtsummary)    # Summary statistics and tables
+library(dplyr)        # Data cleaning and filtering
+library(forcats)      # Handling factor variables
+library(tidymodels)   # Building and tuning models
+library(ggwordcloud)  # Creating word clouds
+library(vip)          # Visualizing variable importance
+library(dotwhisker)   # Coefficient plots
+library(randomForest) # Random forest modeling
+library(glmnet)       # Regression modeling
+library(xgboost)      # Gradient boosting for machine learning
+library(kernlab)      # Kernel-based machine learning
 ```
 
 ## Upload data
@@ -80,7 +95,7 @@ library(forcats)  # Allows re-coding of factors
 ```{r}
 #Upload necessary tables
 patient_data <- read.csv(file.choose())
-message_data <- read.csv(file.choose())
+access_data <- read.csv(file.choose())
 epic_lookup_table <- read.csv(file.choose())
 
 ```
@@ -88,7 +103,20 @@ epic_lookup_table <- read.csv(file.choose())
 ## Exploration and Manipulation of patient data table
 
 ```{r}
-# Count total unique IDs, gives unique patients
+# Converting various column dates from "character" to "date + time" to begin filtering data
+patient_data <- patient_data |>
+  mutate(
+    DOB = as.POSIXct(DOB, format = "%Y-%m-%d %H:%M:%S"),
+    HOSPITAL_ADMIT_DATE = as.POSIXct(HOSPITAL_ADMIT_DATE, format = "%Y-%m-%d %H:%M:%S"),
+    HOSPITAL_DISCHARGE_DATE = as.POSIXct(HOSPITAL_DISCHARGE_DATE, format = "%Y-%m-%d %H:%M:%S"),
+    EPISODE_START_DATE = as.POSIXct(EPISODE_START_DATE, format = "%Y-%m-%d %H:%M:%S"),
+    EPISODE_END_DATE = as.POSIXct(EPISODE_END_DATE, format = "%Y-%m-%d %H:%M:%S")
+  )
+
+# Count total unique IDs, gives unique patients, prior to September 30, 2024 (available access data)
+patient_data <- patient_data |>
+  filter(HOSPITAL_ADMIT_DATE < "2024-09-30")
+
 total_unique <- length(unique(patient_data$MRN))
 
 # Count occurrences of repeated IDs, gives sum of repeat patient encounters
@@ -96,7 +124,6 @@ repeated <- sum(table(patient_data$MRN) > 1)
 
 # Print results
 cat("Total unique IDs:", total_unique, "\nNumber of repeated IDs:", repeated, "\n")
-
 ```
 
 ```{r}
@@ -106,14 +133,12 @@ patient_data_ordered <- patient_data[order(patient_data$MRN, patient_data$HOSPIT
 # Keep only the first occurrence of each MRN
 initial_admissions <- patient_data_ordered[!duplicated(patient_data_ordered$MRN), ]
 
-#Keep only data for admissions prior to September 30, 2024 (available messaging data)
-initial_admissions <- initial_admissions[initial_admissions$HOSPITAL_ADMIT_DATE < as.Date("2024-09-30"), ] 
-
-# Count total records in the filtered table
+# Count total records
 total_records_initial <- nrow(initial_admissions)
 
 # Display the total count
 cat("Total records in the intial admission table:", total_records_initial, "\n") #Equivalent count to unique ID's above
+
 ```
 
 ```{r}
@@ -142,6 +167,7 @@ Sex Column Exploration and Conversion
 unique(initial_admissions$SEX) # Stored as M, F, U
 initial_admissions <- initial_admissions |>  # Remove limited 3 U
   dplyr::filter(SEX != "U")
+
 # Conversion to factor
 initial_admissions$SEX <- as.factor(initial_admissions$SEX)
 initial_admissions$SEX <- droplevels(initial_admissions$SEX)
@@ -154,15 +180,19 @@ Race Column Exploration and Conversion
 # Additional analysis and conversion of data stored: RACE
 ## Will combine/group certain variables for clarity and simplicity 
 unique(initial_admissions$RACE) 
+
 initial_admissions <- initial_admissions |>
   dplyr::mutate(RACE = case_when(
-      RACE %in% c("Refused", "Unknown", "Asked but unknown", "", "Choose not to disclose") ~ "Unknown/Missing/Refused",
+      RACE %in% c("Refused", "Choose not to disclose") ~ "Refused",
+      RACE %in% c("Unknown", "Asked but unknown", "") ~ "Unknown",
+      is.na(RACE) ~ "Unknown",                                     
       TRUE ~ RACE
     )
   )
+
 # Conversion to factor
 initial_admissions$RACE <- as.factor(initial_admissions$RACE)
-initial_admissions$RACE <- fct_infreq(initial_admissions$RACE)
+initial_admissions$RACE <- fct_infreq(initial_admissions$RACE) #rearrange
 table(initial_admissions$RACE)
 ```
 
@@ -172,12 +202,17 @@ Ethnicity Column Exploration and Conversion
 # Additional analysis and conversion of data stored: ETHNICITY
 ## Will combine/group certain variables for clarity and simplicity 
 unique(initial_admissions$ETHNICITY) 
+
 initial_admissions <- initial_admissions |> 
   dplyr::mutate(ETHNICITY = case_when(
-      ETHNICITY %in% c("Refused", "Unknown", "Asked But Unknown", "", "Choose Not To Disclose", "Other") ~ "Unknown/Missing/Refused",
+      ETHNICITY %in% c("Refused", "Choose Not To Disclose") ~ "Refused",
+      ETHNICITY %in% c("Non-hispanic Or Non-latino") ~ "Non-Hispanic or Non-Latino",
+      ETHNICITY %in% c("Hispanic Or Latino") ~ "Hispanic or Latino",
+      ETHNICITY %in% c("Asked But Unknown", "", NA) ~ "Unknown",  # Include NA and blank spaces as Unknown
       TRUE ~ ETHNICITY
     )
   )
+
 # Conversion to factor
 initial_admissions$ETHNICITY <- as.factor(initial_admissions$ETHNICITY)
 initial_admissions$ETHNICITY <- fct_infreq(initial_admissions$ETHNICITY)
@@ -190,14 +225,14 @@ Preferred Language Column Exploration and Conversion
 # Additional analysis and conversion of data stored: PREFERRED LANGUAGE
 ## Will combine/group certain variables for clarity and simplicity 
 unique(initial_admissions$PREFERRED_LANGUAGE) 
+
 # Group languages with fewer than 15 occurrences as "Other" and keep "Unknown" and NULL seperate
 initial_admissions <- initial_admissions |>
   dplyr::mutate(PREFERRED_LANGUAGE = case_when(
-      is.na(PREFERRED_LANGUAGE) | PREFERRED_LANGUAGE == "" ~ "Unknown/Missing",  # Combine NULL/missing and "" into Unknown/Missing
-      PREFERRED_LANGUAGE == "UNKNOWN" ~ "Unknown/Missing",                       # Keep UNKNOWN in this group
-      PREFERRED_LANGUAGE %in% names(which(table(PREFERRED_LANGUAGE) < 15)) ~ "Other",  # Group languages with <15 occurrences
-      PREFERRED_LANGUAGE == "Other" ~ "Other",                          # Explicitly include "Other" in this group
-      TRUE ~ PREFERRED_LANGUAGE                                 
+      PREFERRED_LANGUAGE %in% names(which(table(PREFERRED_LANGUAGE) < 10)) ~ "Other",  # Group languages with <10 occurrences
+      PREFERRED_LANGUAGE %in% c("", NA) ~ "Unknown",  # Group blank and NA values into Unknown
+      PREFERRED_LANGUAGE == "Other" ~ "Other",       # Ensure "Other" stays as "Other"
+      TRUE ~ str_to_title(PREFERRED_LANGUAGE)        # Capitalize appropriately                              
     )
   )
 
@@ -211,14 +246,21 @@ table(initial_admissions$PREFERRED_LANGUAGE)
 Payor Group Column Exploration and Conversion
 
 ```{r}
-
 # Additional analysis and conversion of data stored: PAYOR GROUP
 unique(initial_admissions$PAYOR_GROUP) 
+
 #Recode Medical Assistance as Medicaid
 initial_admissions$PAYOR_GROUP <- 
-  fct_recode(initial_admissions$PAYOR_GROUP, "MEDICAID" = "MEDICAL ASSISTANCE")
+  forcats::fct_recode(initial_admissions$PAYOR_GROUP, "Medicaid" = "MEDICAL ASSISTANCE")
+
 initial_admissions <- initial_admissions |>
-  dplyr::mutate(PAYOR_GROUP = if_else(is.na(PAYOR_GROUP) | PAYOR_GROUP == "", "Missing/Unknown", PAYOR_GROUP))
+  dplyr::mutate(PAYOR_GROUP = case_when(
+    PAYOR_GROUP %in% c("COMMERCIAL") ~ "Commercial",   # Group Commercial
+    PAYOR_GROUP %in% c("CHARITY CARE") ~ "Other",      # Group Charity Care into Other
+    PAYOR_GROUP %in% c("OTHER") ~ "Other",            # Ensure Other remains Other
+    PAYOR_GROUP %in% c("", NA) ~ "Unknown",           # Group missing or blank values into Unknown
+    TRUE ~ PAYOR_GROUP                                # Leave all other values unchanged
+  ))
 
 # Conversion to factor
 initial_admissions$PAYOR_GROUP <- as.factor(initial_admissions$PAYOR_GROUP)
@@ -230,17 +272,12 @@ table(initial_admissions$PAYOR_GROUP)
 Additional data manipulation (include dates, MyCHOP activation, MyCHOP declined, inborn)
 
 ```{r}
-#Converting various column dates from "character" to "date"
-initial_admissions <- initial_admissions |>
-  mutate(
-    DOB = as.Date(initial_admissions$DOB),
-    HOSPITAL_ADMIT_DATE = as.Date(HOSPITAL_ADMIT_DATE),
-    HOSPITAL_DISCHARGE_DATE = as.Date(HOSPITAL_DISCHARGE_DATE),
-    EPISODE_START_DATE = as.Date(EPISODE_START_DATE),
-    EPISODE_END_DATE = as.Date(EPISODE_END_DATE)
-  )
+# Mutating access timing
+access_data <- access_data |>
+  mutate(UA_TIME = substr(UA_TIME, 1, 19)) |>
+  mutate(UA_TIME = as.POSIXct(UA_TIME, format = "%Y-%m-%d %H:%M:%S"))
 
-#Exploration of MyCHOP Columns
+# Exploration of MyCHOP Columns
 # Count rows where MYCHOP_ACTIVATION_IND is 1
 activation_count <- sum(initial_admissions$MYCHOP_ACTIVATION_IND == 1, na.rm = TRUE)
 
@@ -256,36 +293,71 @@ inborn_count <- sum(initial_admissions$INBORN_IND == 1, na.rm = TRUE)
 cat("Number of inborn patients:", inborn_count, "out of", total_unique, "\n")
 ```
 
+Exploration of LOS Table
+
+```{r}
+# LOS exploration
+summary(patient_data$NICU_LOS_DAYS)
+
+# Exploration of the null values demonstrated that these patients were still admitted. These patients were removed from our datasets
+patient_data <- patient_data |>
+  filter(!is.na(NICU_LOS_DAYS))
+
+initial_admissions <- initial_admissions |>
+  filter(!is.na(NICU_LOS_DAYS))
+
+# Exploring the lowest LOS patients. Ultimately removed if admission was less than 4 hours
+lowest_los_patients <- patient_data |>
+  filter(NICU_LOS_DAYS < .17)  # Filtering patients less than 4 hours >> 46 patients
+
+patient_data <- patient_data |>
+  filter(NICU_LOS_DAYS > 0.17)
+
+initial_admissions <- initial_admissions |>
+  filter(NICU_LOS_DAYS > 0.17)
+```
+
+Exploration of birth weight table
+
+```{r}
+summary(initial_admissions$BIRTH_WEIGHT_GRAMS)
+
+# After manual chart review two lowest are incorrect values. Removed from data set.
+BW_350 <- patient_data |>
+  filter(BIRTH_WEIGHT_GRAMS < 350)
+
+patient_data <- patient_data |>
+  filter(is.na(BIRTH_WEIGHT_GRAMS) | BIRTH_WEIGHT_GRAMS > 350)
+
+initial_admissions <- initial_admissions |>
+  filter(is.na(BIRTH_WEIGHT_GRAMS) | BIRTH_WEIGHT_GRAMS > 350)
+
+```
+
 ## Exploration and Manipulation of Messaging Table
 
 ```{r}
 #When I initially queried the messaging information table for my included patients, it contained 37 million rows of information. After some data cleaning and in the interest of simpliying my data utilization in RStudio, I filtered specifically for pta.ua_time BETWEEN fne.episode_start_date AND fne.episode_end_date to make sure that the results only occured while a patient was admitted during my time window.
 
 # Count total unique rows, gives total number of messages provided in filtered data set
-total_unique_messages <- nrow(message_data)
+total_unique_access <- nrow(access_data)
 
 # Count total unique patients, gives total number of patients who had their MyChart accessed during NICU admission
-total_unique_messages_pat <- length(unique(message_data$MRN))
+total_unique_access_pat <- length(unique(access_data$MRN))
 
 # Display results
-cat("Total unique messages:", total_unique_messages, "\nNumber of unique patients:", total_unique_messages_pat, "\n")
-
+cat("Total unique accesses:", total_unique_access, "\nNumber of unique patients:", total_unique_access_pat, "\n")
 ```
 
 Filtering table to only include patient access to MyChart (remove ShareEveryhere and External_Client)
 
 ```{r}
-# Mutating dates
-message_data <- message_data |>
-  mutate(UA_TIME = as.Date(message_data$UA_TIME))
-
 # Table to show counts of different individuals accessing MyChart
-table(message_data$UA_PERSON_TYPE_C)
+table(access_data$UA_PERSON_TYPE_C)
 
 #Filtering for only patient and user (proxy)
-filtered_message_data <- message_data |>
-  dplyr::filter(message_data$UA_PERSON_TYPE_C %in% c(1, 2))
-  
+access_data <- access_data |>
+  dplyr::filter(access_data$UA_PERSON_TYPE_C %in% c(1, 2))
 ```
 
 Utilization of a lookup table to understand the numeric values of MYC_UA_TYPE_C. This column uses a numeric value which I then associated with the lookup table I created from the Epic User Web to understand the action being completed.
@@ -293,24 +365,65 @@ Utilization of a lookup table to understand the numeric values of MYC_UA_TYPE_C.
 ```{r}
 #Visualizing the top 30 actions of a total 466 variables
 head(epic_lookup_table, n = 30)
+
+# Join `access_data` with `epic_lookup_table`
+access_data <- access_data |>
+  left_join(epic_lookup_table, by = c("MYC_UA_TYPE_C" = "Code")) |> 
+  rename(Activity_Description = Description) 
+```
+
+In exploring the data and process mapping the steps involved in accessing MyChart, we identified that meaningful use of MyChart extends beyond initial setup and login activity. To ensure we capture meaningful engagement, we defined 'meaningful access' as instances where a patient had three or more actions in MyChart.
+
+```{r}
+# Filtering patients with less than 3
+patients_less_than_3 <- access_data |>
+  group_by(MRN) |>
+  summarise(access_count = n()) |>
+  filter(access_count < 3)
+
+# Bring along activity descriptions by filtering the original dataset
+patients_less_than_3_activities <- access_data |>
+  semi_join(patients_less_than_3, by = "MRN") |>  # Filter to keep only patients with less than 5 accesses
+  left_join(epic_lookup_table, by = c("MYC_UA_TYPE_C" = "Code"))  # Join to get activity descriptions
+
+# Summarize 
+summary_activities <- patients_less_than_3_activities |>
+  group_by(Activity_Description) |>
+  summarise(
+    Num_Patients = n_distinct(MRN),       
+    Total_Accesses = n()                  
+  ) |>
+  arrange(desc(Total_Accesses))           
+
+# Display results
+summary_activities
 ```
 
 Addition of a column to account for whether or not a patient accessed their MyChart account DURING their hospital stay
 
 ```{r}
-# Identify patient who accessed their MyChart DURING their initial NICU admission
-mychart_access <- filtered_message_data |>
+# Identify patients who accessed their MyChart DURING their initial NICU admission
+accessed_mychart <- access_data |>
   inner_join(initial_admissions, by = "MRN") |>
   filter(UA_TIME >= EPISODE_START_DATE & UA_TIME <= EPISODE_END_DATE) |>
   select(MRN) |>
   distinct()
 
+# Remove MRNs with less than 3 accesses from accessed_mychart
+accessed_mychart_filtered <- accessed_mychart |>
+  filter(!MRN %in% patients_less_than_3$MRN)
+
 # Add MyChart_Access column to initial_admissions
 initial_admissions <- initial_admissions |>
-  mutate(
-    MyChart_Access = ifelse(MRN %in% mychart_access$MRN, 1, 0)
-  )
-patients_accessed_mychart <- sum(initial_admissions$MyChart_Access == 1, na.rm = TRUE)
+  mutate(MyChart_Access = ifelse(MRN %in% accessed_mychart_filtered$MRN, 1, 0))
+
+# Conversion to factor
+initial_admissions$MyChart_Access <- factor(initial_admissions$MyChart_Access, 
+                                            levels = c(0, 1), 
+                                            labels = c("No Access", "Accessed"))
+
+# Total number of patients who accessed MyChart meaningfully
+patients_accessed_mychart <- sum(initial_admissions$MyChart_Access == "Accessed", na.rm = TRUE)
 
 # Display results
 cat("Total number of patients who accessed MyChart:", patients_accessed_mychart, "\nNumber of patients admitted:", total_records_initial, "\n")
@@ -320,21 +433,22 @@ cat("Total number of patients who accessed MyChart:", patients_accessed_mychart,
 
 ## NICU Patient Characteristics
 
-The initial part of this section contains descriptive statistics for patients admitted to the NICU from January 2018 to September 2024. Displayed below is a summary table for the overall patient data set split by access to MyChart.
+The initial part of this section contains a demographics and characteristics table for patients admitted to the NICU from January 2018 to September 2024. Displayed below is the summary table for the overall patient data set split by access to MyChart.
 
 ```{r}
 # Split initial_admissions into two groups
-accessed_mychart <- initial_admissions %>% filter(MyChart_Access == 1)
-not_accessed_mychart <- initial_admissions %>% filter(MyChart_Access == 0)
+accessed_mychart_plot <- initial_admissions |> filter(MyChart_Access == "Accessed")
+not_accessed_mychart_plot <- initial_admissions |> filter(MyChart_Access == "No Access")
 
 # Create summary tables for each group
-summary_accessed <- accessed_mychart |>
+summary_accessed <- accessed_mychart_plot |>
   tbl_summary(
-    include = c(SEX, RACE, ETHNICITY, PREFERRED_LANGUAGE, PAYOR_GROUP,
-                GESTATIONAL_AGE_TOTAL_DAYS, NICU_LOS_DAYS, INBORN_IND),
+    include = c(SEX, RACE, ETHNICITY, PREFERRED_LANGUAGE, PAYOR_GROUP, 
+                GESTATIONAL_AGE_TOTAL_DAYS, BIRTH_WEIGHT_GRAMS, NICU_LOS_DAYS, INBORN_IND),
     statistic = list(
       all_continuous() ~ "{median} ({p25}, {p75})",  # Median (IQR) for continuous variables
-      all_categorical() ~ "{n} ({p}%)"              # Count and percentage for categorical variables
+      all_categorical() ~ "{n} ({p}%)",              # Count and percentage for categorical variables
+      INBORN_IND ~ "{n}/{N} ({p}%)"
     ),
     label = list(
       SEX ~ "Gender",
@@ -342,8 +456,9 @@ summary_accessed <- accessed_mychart |>
       ETHNICITY ~ "Ethnicity",
       PREFERRED_LANGUAGE ~ "Preferred Language",
       PAYOR_GROUP ~ "Insurance",
-      GESTATIONAL_AGE_TOTAL_DAYS ~ "Gestational Age (Days)",
-      NICU_LOS_DAYS ~ "NICU Length of Stay (Days)",
+      GESTATIONAL_AGE_TOTAL_DAYS ~ "Gestational Age (days)",
+      BIRTH_WEIGHT_GRAMS ~ "Birth Weight (grams)",
+      NICU_LOS_DAYS ~ "NICU Length of Stay (days)",
       INBORN_IND ~ "Inborn"
     ),
     missing = "no"  #Exclude missing values
@@ -351,15 +466,16 @@ summary_accessed <- accessed_mychart |>
   modify_header(label = "**Variable**") %>%
   modify_header(stat_0 = "**N (%)**") %>%
   bold_labels() %>%
-  modify_caption("**Summary Table: Accessed MyChart**")
+  modify_caption("**Summary Table: Accessed**")
 
-summary_not_accessed <- not_accessed_mychart |>
+summary_not_accessed <- not_accessed_mychart_plot |>
   tbl_summary(
     include = c(SEX, RACE, ETHNICITY, PREFERRED_LANGUAGE, PAYOR_GROUP,
-                GESTATIONAL_AGE_TOTAL_DAYS, NICU_LOS_DAYS, INBORN_IND),
+                GESTATIONAL_AGE_TOTAL_DAYS, BIRTH_WEIGHT_GRAMS, NICU_LOS_DAYS, INBORN_IND),
     statistic = list(
       all_continuous() ~ "{median} ({p25}, {p75})",  # Median (IQR) for continuous variables
-      all_categorical() ~ "{n} ({p}%)"              # Count and percentage for categorical variables
+      all_categorical() ~ "{n} ({p}%)",              # Count and percentage for categorical variables
+      INBORN_IND ~ "{n}/{N} ({p}%)"
     ),
     label = list(
       SEX ~ "Gender",
@@ -367,8 +483,9 @@ summary_not_accessed <- not_accessed_mychart |>
       ETHNICITY ~ "Ethnicity",
       PREFERRED_LANGUAGE ~ "Preferred Language",
       PAYOR_GROUP ~ "Insurance",
-      GESTATIONAL_AGE_TOTAL_DAYS ~ "Gestational Age (Days)",
-      NICU_LOS_DAYS ~ "NICU Length of Stay (Days)",
+      GESTATIONAL_AGE_TOTAL_DAYS ~ "Gestational Age (days)",
+      BIRTH_WEIGHT_GRAMS ~ "Birth Weight (grams)",
+      NICU_LOS_DAYS ~ "NICU Length of Stay (days)",
       INBORN_IND ~ "Inborn"
     ),
     missing = "no"  #Exclude missing values
@@ -376,12 +493,12 @@ summary_not_accessed <- not_accessed_mychart |>
   modify_header(label = "**Variable**") %>%
   modify_header(stat_0 = "**N (%)**") %>%
   bold_labels() %>%
-  modify_caption("**Summary Table: Did Not Access MyChart**")
+  modify_caption("**Summary Table: Did Not Access**")
 
 # Combine the two summary tables side-by-side
 final_summary <- tbl_merge(
   tbls = list(summary_accessed, summary_not_accessed),
-  tab_spanner = c("**Accessed MyChart**", "**Did Not Access MyChart**")
+  tab_spanner = c("**Accessed**", "**Did Not Access**")
 )
 
 # Print the final summary table
@@ -452,8 +569,38 @@ payor_plot
 ```
 
 ```{r}
+# Create violin plots for each continuous variable
+# NICU_LOS_Days
+ggplot(initial_admissions, aes(x = MyChart_Access, y = NICU_LOS_DAYS, fill = MyChart_Access)) +
+  geom_violin(trim = FALSE) +
+  labs(title = "Violin Plot of NICU Length of Stay by MyChart Access",
+       x = "MyChart Access",
+       y = "NICU Length of Stay (Days)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# BIRTH_WEIGHT_GRAMS
+ggplot(initial_admissions, aes(x = MyChart_Access, y = BIRTH_WEIGHT_GRAMS, fill = MyChart_Access)) +
+  geom_violin(trim = FALSE) +
+  labs(title = "Violin Plot of Birth Weight by MyChart Access",
+       x = "MyChart Access",
+       y = "Birth Weight (Grams)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# GESTATIONAL_AGE_TOTAL_DAYS
+ggplot(initial_admissions, aes(x = MyChart_Access, y = GESTATIONAL_AGE_TOTAL_DAYS, fill = MyChart_Access)) +
+  geom_violin(trim = FALSE) +
+  labs(title = "Violin Plot of Gestational Age by MyChart Access",
+       x = "MyChart Access",
+       y = "Gestational Age (Days)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+```{r}
 # Graph showing overall admissions to the NICU (includes re-admitted patients to NICU)
-patient_data$EPISODE_START_DATE <- as.Date(patient_data$EPISODE_START_DATE)
 # Aggregate data by month
 monthly_data_all <- patient_data |>
   mutate(month = as.Date(cut(EPISODE_START_DATE, breaks = "month"))) |>
@@ -469,44 +616,336 @@ ggplot(monthly_data_all, aes(x = month, y = frequency)) +
     y = "Number of Admissions"
   ) +
   theme(
-    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),  # Center title
-    axis.title = element_text(size = 14),  # Axis titles
-    axis.text = element_text(size = 12)  # Axis labels
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14), 
+    axis.text = element_text(size = 12) 
   )
 ```
 
 ## MyChart Access Data Display
 
 ```{r}
-# Aggregate monthly totals directly from initial_admissions
-monthly_data_initial <- initial_admissions |>
-  mutate(month = as.Date(cut(EPISODE_START_DATE, breaks = "month"))) |>
+# Aggregate monthly totals directly from access_data
+monthly_access_data <- access_data |>
+  mutate(month = as.Date(cut(UA_TIME, breaks = "month"))) |>
   group_by(month) |>
   summarise(
-    total_admissions = n(),  # Total admissions
-    mychart_access = sum(MyChart_Access == 1, na.rm = TRUE)  # Patients who accessed MyChart
+    total_accesses = n()  # Total MyChart accesses per month
   )
 
-# Create the combined plot
-ggplot(monthly_data_initial, aes(x = month)) +
-  geom_col(aes(y = total_admissions), fill = "skyblue", color = "black") +  # Bar chart for total admissions
-  geom_line(aes(y = mychart_access), color = "red", size = 1.2) +  # Line chart for MyChart access
+# Create a line plot for total MyChart accesses by month
+ggplot(monthly_access_data, aes(x = month, y = total_accesses)) +
+  geom_line() +                        
+  geom_point() +                        
   labs(
-    title = "Monthly NICU Admissions with MyChart Access",
+    title = "Monthly MyChart Accesses",
     x = "Month",
-    y = "Number of Patients",
-    caption = "Bar chart: Total admissions; Red line: MyChart access"
+    y = "Total Accesses"
   ) +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 12),
-    legend.position = "none"
+  scale_x_date(date_labels = "%b %Y")   # Format x-axis labels as "Month Year"
+
+```
+
+```{r}
+#Exploration of MyChart access. First we will filter by MRN to assess how many times MyChart is accessed per MRN
+access_summary_per_patient <- access_data |>
+  group_by(MRN) |>
+  summarise(access_count = n())
+
+access_summary_per_patient <- access_summary_per_patient |>
+  arrange(desc(access_count))
+
+head(access_summary_per_patient$access_count, n = 10) #showing some of the most active users having 56k, 45k, 35k, 33k etc
+
+summary(access_summary_per_patient$access_count)
+
+access_summary_per_patient_graph <- access_summary_per_patient %>%
+  mutate(
+    capped_access_count = ifelse(access_count > 5000, 5000, access_count)
   )
+
+# Plot the data with grouped values
+ggplot(access_summary_per_patient_graph, aes(x = capped_access_count)) +
+  geom_histogram(bins = 100, fill = "blue", color = "black") +
+  scale_x_continuous(
+    breaks = seq(0, 5000, by = 500), 
+    labels = c(seq(0, 9000, by = 1000), ">10k") 
+  ) +
+  labs(
+    title = "Distribution of MyChart Access",
+    x = "Number of MyChart Accesses Grouped",
+    y = "Number of patients"
+  )
+
+```
+
+```{r}
+#Exploration of what people are accessing most frequently accessing
+# Count the frequency of codes in access_data
+code_frequencies <- access_data %>%
+  group_by(MYC_UA_TYPE_C) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))  # Sort by descending order of frequency
+
+# Join with the epic_lookup_table to get descriptions
+code_with_description <- code_frequencies %>%
+  left_join(epic_lookup_table, by = c("MYC_UA_TYPE_C" = "Code"))
+
+# View the result (top 50 most frequent actions)
+top_actions <- code_with_description |>
+  select(MYC_UA_TYPE_C, Description, Count) |>
+  head(50)
+top_actions
+
+ggplot(top_actions, aes(label = Description, size = Count)) +
+  geom_text_wordcloud() +
+  scale_size_area(max_size = 15) +  # Adjust the maximum size of the words
+  theme_minimal() +
+  labs(title = "Word Cloud of MyChart Actions", subtitle = "Based on Action Frequencies")
+
+```
+
+```{r}
+# Create the filtered table
+primary_model <- initial_admissions %>%
+  select(
+    SEX, 
+    RACE, 
+    ETHNICITY, 
+    PREFERRED_LANGUAGE, 
+    PAYOR_GROUP, 
+    BIRTH_WEIGHT_GRAMS,
+    EPISODE_START_DATE,
+    NICU_LOS_DAYS, 
+    INBORN_IND, 
+    GESTATIONAL_AGE_TOTAL_DAYS, 
+    MyChart_Access
+  )
+
+# View the first few rows of the new table
+head(primary_model)
+
+# Check for missing data
+summary(primary_model)
+
+# Converting date to time periods and factor we can use
+primary_model$date_period <- dplyr::case_when(
+  primary_model$EPISODE_START_DATE < as.Date("2020-01-01") ~ "01-2018 to 12-2019",
+  primary_model$EPISODE_START_DATE >= as.Date("2020-01-01") & primary_model$EPISODE_START_DATE < as.Date("2022-01-01") ~ "01-2020 to 12-2021",
+  primary_model$EPISODE_START_DATE >= as.Date("2022-01-01") ~ "01-2022 to 09-2024"
+)
+
+weird <- primary_model |>
+  filter(is.na(date_period))
+
+# Convert outcome variable to factor
+primary_model$INBORN_IND <- as.factor(primary_model$INBORN_IND)
+primary_model$date_period <- as.factor(primary_model$date_period)
+
+## Logistic regression model
+# Set the engine for logistic regression
+logistic_model <- 
+  logistic_reg() |> 
+  set_engine("glm")
+
+# Fit the model
+logistic_fit <-
+  logistic_model |>
+  fit(MyChart_Access ~ SEX + RACE + ETHNICITY + PREFERRED_LANGUAGE + PAYOR_GROUP +
+    BIRTH_WEIGHT_GRAMS + NICU_LOS_DAYS + INBORN_IND + GESTATIONAL_AGE_TOTAL_DAYS + date_period
+    , data = primary_model)
+
+# Visualize information
+tidy(logistic_fit)
+
+# Creation of plot fit coefficients
+tidy(logistic_fit) |> 
+  dwplot(dot_args = list(size = 2, color = "black"),
+         whisker_args = list(color = "black"),
+         vline = geom_vline(xintercept = 0, colour = "grey50", linetype = 2)) +
+  theme_bw()
+
+
+logistic_training_pred <- bind_cols(
+  truth = primary_model$MyChart_Access,
+  predict(logistic_fit, primary_model, type = "class"),
+  predict(logistic_fit, primary_model, type = "prob")
+)
+
+logistic_training_pred
+
+#Plot of ROC curve
+logistic_training_pred |>
+  roc_curve(truth, ".pred_No Access") |>
+  ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+  geom_path(color = "darkblue") +
+  geom_abline(color = "darkgrey") +
+  coord_equal() +
+  theme_bw()
+
+#Area under the ROC curve
+roc_auc(logistic_training_pred, 
+        truth, 
+        ".pred_No Access")
+
+```
+
+```{r}
+
+set.seed(1234)
+pmodel_folds <- vfold_cv(primary_model, v = 10)
+pmodel_folds
+
+#Create a workflow() for fitting the glm
+glm_wf <- workflow() |>
+  add_model(logistic_model) |>
+  add_formula(MyChart_Access ~ SEX + RACE + ETHNICITY + PREFERRED_LANGUAGE + PAYOR_GROUP +
+    BIRTH_WEIGHT_GRAMS + NICU_LOS_DAYS + INBORN_IND + GESTATIONAL_AGE_TOTAL_DAYS + date_period)
+  
+#Use workflow to fit model with each fold of resampled data
+glm_fit_cv <- glm_wf |>
+  fit_resamples(pmodel_folds, control = control_resamples(save_pred = TRUE))
+
+#Collect predictions out of folds into one tibble
+pmodels_glm_cv_preds <- collect_predictions(glm_fit_cv)
+pmodels_glm_cv_preds
+
+#Plot of ROC curve
+autoplot(roc_curve(pmodels_glm_cv_preds, 
+        MyChart_Access, 
+        ".pred_No Access"))
+
+#Overall metrics
+collect_metrics(glm_fit_cv)
+
+#To see performance of each fold
+pmodels_glm_cv_preds |>
+  group_by(id) |>
+  roc_auc(MyChart_Access, ".pred_No Access")
+
+#ROC curves of each fold
+pmodels_glm_cv_preds |>
+  group_by(id) |>
+  roc_curve(MyChart_Access, ".pred_No Access") |>
+  autoplot()
+
+```
+
+```{r}
+#Random forest
+# Impute missing numerical values with the median
+primary_model <- primary_model |>
+  mutate(
+    BIRTH_WEIGHT_GRAMS = ifelse(is.na(BIRTH_WEIGHT_GRAMS), median(BIRTH_WEIGHT_GRAMS, na.rm = TRUE), BIRTH_WEIGHT_GRAMS),
+    GESTATIONAL_AGE_TOTAL_DAYS = ifelse(is.na(GESTATIONAL_AGE_TOTAL_DAYS), median(GESTATIONAL_AGE_TOTAL_DAYS, na.rm = TRUE), GESTATIONAL_AGE_TOTAL_DAYS)
+  )
+
+set.seed(123) 
+# Create a random index for the training set
+train_index <- sample(seq_len(nrow(primary_model)), size = 0.8 * nrow(primary_model))
+
+# Split the primary_model into training and testing sets
+train_data <- primary_model[train_index, ]  # 80% of the data
+test_data <- primary_model[-train_index, ]  # Remaining 20%
+
+#Model specification
+rf_spec <- 
+  rand_forest(trees = 1000, min_n = 5) |> #number of trees and min # of data points
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("classification")
+  
+rf_fit <- rf_spec |>
+  fit(MyChart_Access ~ SEX + RACE + ETHNICITY + PREFERRED_LANGUAGE + PAYOR_GROUP +
+    BIRTH_WEIGHT_GRAMS + NICU_LOS_DAYS + INBORN_IND + GESTATIONAL_AGE_TOTAL_DAYS + date_period, data = train_data)
+rf_fit
+
+pmodel.rf.pred.values <- bind_cols(
+  truth = test_data$MyChart_Access,
+  predict(rf_fit, test_data),
+  predict(rf_fit, test_data, type = "prob")
+)
+pmodel.rf.pred.values
+
+roc_auc(pmodel.rf.pred.values,
+        truth, 
+        ".pred_No Access")
+
+autoplot(roc_curve(pmodel.rf.pred.values, 
+                   truth, 
+                   ".pred_No Access"))
+
+##Helps to understand the variables that contributed the most to the classifcation
+rf_fit |>
+  extract_fit_engine() |>
+  importance()
+
+rf_fit |>
+  extract_fit_engine() |>
+  vip()
+
+```
+
+```{r}
+#XGBoost
+
+#Model specification
+bt_spec <- 
+  boost_tree(trees = 50,
+             tree_depth = 4) |>
+  set_mode("classification") |>
+  set_engine("xgboost")
+bt_spec
+
+# Recipe
+bt_recipe <-
+  recipe(MyChart_Access ~ SEX + RACE + ETHNICITY + PREFERRED_LANGUAGE + PAYOR_GROUP +
+    BIRTH_WEIGHT_GRAMS + NICU_LOS_DAYS + INBORN_IND + GESTATIONAL_AGE_TOTAL_DAYS + date_period, data = primary_model) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_normalize(all_predictors())
+
+#Workflow specification
+bt_workflow <- workflow() |>
+  add_model(bt_spec) |>
+  add_recipe(bt_recipe)
+
+#Model fit to training data
+bt_fit <- fit(bt_workflow, data = primary_model)
+bt_fit
+  
+pmodel.bt.pred.values <- bind_cols(
+  truth = primary_model$MyChart_Access,
+  predict(bt_fit, primary_model),
+  predict(bt_fit, primary_model, type = "prob")
+)
+
+roc_auc(pmodel.bt.pred.values,
+        truth, 
+        ".pred_No Access")
+
+autoplot(roc_curve(pmodel.bt.pred.values, 
+                   truth, 
+                   ".pred_No Access"))
+
+#Variable importance extracted with vip
+vip(bt_fit)
+
+#Variable importance extracted from xgboost object
+bt_object <- pull_workflow_fit(bt_fit)$fit
+xgb.importance(model = bt_object)
 ```
 
 # Conclusion
 
 This the conclusion. The @sec-results can be invoked here.
 
+# Limitations
+
+Our team recognizes that there is a more than limited amount of missing information, specificallty when looking at categories such as race, ethnicity, language, and payor group. We are beginning to plan for ways to reconcile some of this information including: access to birth certificate information, exploring interpreter utilization records at CHOP, and exploring payor group more where able.
+
 ## References
+
+1.  Children's Hospital of Philadelphia. MyChart FAQ. Retrieved December 5, 2024, from https://mychop.chop.edu/MyChart/Authentication/Login?mode=stdfile&option=faq#EQ_what
+2.  Bush RA, Vemulakonda VM, Richardson AC, Deakyne Davies SJ, Chiang GJ. Providing Access: Differences in Pediatric Portal Activation Begin at Patient Check-in. Appl Clin Inform. 2019 Aug;10(4):670-678. doi: 10.1055/s-0039-1695792. Epub 2019 Sep 11. PMID: 31509879; PMCID: PMC6739202.
+3.  Office of the Assistant Secretary for Planning and Evaluation. (August 20, 1996). Health Insurance Portability and Accountability Act of 1996. U.S. Department of Health and Human Services. https://aspe.hhs.gov/reports/health-insurance-portability-accountability-act-1996
+4.  U.S. Food and Drug Administration. (n.d.). 21st Century Cures Act. U.S. Department of Health and Human Services. https://www.fda.gov/regulatory-information/selected-amendments-fdc-act/21st-century-cures-act
+5.  Harvard Risk Management Foundation. (2021, December 9). Cures Act overview. Harvard Risk Management Foundation. https://www.rmf.harvard.edu/Risk-Prevention-and-Education/Article-Catalog-Page/Articles/2021/Cures-Act-Overview
